@@ -245,7 +245,19 @@ from all_sessions
 
 However, it should be known that this is a temporary column result based on the query, if you were to retrieve the 'full_visitor_id' column from the 'all_sessions' table, it will display it as numeric type without the string padding.
 
-#### <br> Example 1: Unexpected Data
+#### <br>Consistent Format
+Just like padding that can be used for consistent formatting of string length, we can use functions like TRANSLATE() and REGEXP_REPLACE() to format the text output of a given column.
+```sql
+--TRANSLATE(string, from, to): replace a set of characters (from) with a new set of characters (to)
+select translate(v2_product_category, '/', '>') as v2_product_category_new,
+  v2_product_category as v2_product_category_original
+from all_sessions
+```
+
+![SQL-Project1-Pic20](https://github.com/DylJFern/lighthouse-labs-ds/assets/128000630/338e9e41-648f-441b-8d08-a0b319296436)
+
+
+#### <br> Unexpected Data: Example 1
 In the database, columns can contain data that is unexpected. For instance, when viewing the 'channel_grouping' column and performing the following query
 ```sql
 select *
@@ -270,7 +282,14 @@ Re-running the query, we get the resulting output
 
 ![SQL-Project1-Pic9](https://github.com/DylJFern/lighthouse-labs-ds/assets/128000630/eb05aa21-870e-4d0b-b34d-7c649a1e4397)
 
-#### <br> Example 2: Unexpected Data
+<br>On the other hand, we may have records that already contain a null value, but would like to replace them with more appropriate text. In particular, the 'ecommerce_action_option' column consists of "null", "Review", "Billing and Shipping", and "Payment". Although, in this scenario it may make more sense to replace "null" records with "N/A" based on the context of the column.
+```sql
+update all_sessions
+--COALESCE(arg1, arg2, ...): accepts an unlimited number of arguments; it evalutes arguments from left to right (arg2, ...) until it finds the first non-null argument (otherwise returns null), remaining arguments are not evaluated
+set ecommerce_action_option = coalesce(ecommerce_action_option, 'N/A')
+```
+
+#### <br> Unexpected Data: Example 2
 Similar to 'channel_grouping', we can repeat the process for the column 'country'
 ```sql
 select country
@@ -294,7 +313,7 @@ set country =
   end)
 ```
 
-#### <br> Example 3: Unexpected Data
+#### <br> Unexpected Data: Example 3
 From a quick analysis we notice names in the 'city' column begin with a uppercase character followed by a lowercase character. We can use the following to test our hypothesis (knowing the total row count is 15,134).
 ```sql
 select city
@@ -360,3 +379,64 @@ group by v2_product_category
 the result changes and now displays another row "${escCatTitle}" that is displayed 19 times in the 'v2_product_category' column. We immediately notice, it has the format of "...Ca..." which is an uppercase character followed by a lowercase character which is why it would not appear without the use of the anchor character.
 
 #### <br>Character Case
+The characters of a string can be manipulated in unique ways, especially if one were to implement POSIX regular expressions. Nevertheless, to keep things simple we will only explore three PostgreSQL functions.
+
+All the rows in the 'type' column contain only uppercase characters.
+
+![SQL-Project1-Pic17](https://github.com/DylJFern/lighthouse-labs-ds/assets/128000630/8b0ca571-0ec7-4799-b16d-7e158f8f7ebd)
+
+The uppercase characters can all be changed to lowercase using,
+```sql
+select lower(type)
+from all_sessions
+```
+and the table can be updated using,
+```sql
+update all_sessions
+set type = lower(type)
+```
+but this will change its data type to text. This can be counteracted by casting it back to varchar(50) if one wanted to.
+```sql
+update all_sessions
+set type = cast(lower(type) as varchar(50))
+```
+
+<br>Simarly, we can change all the characters in a string to uppercase with UPPER().
+
+<br>Another alternative would be to use INITCAP() to convert the first letter of each word in a string expression to uppercase with the remaining characters in lowercase.
+```sql
+select initcap(v2_product_name) as v2_product_name_new, v2_product_name as v2_product_name_original
+from all_sessions
+```
+This can be problematic without proper consideration of use, for example, "Google 22 oz Water Bottle" becomes "Google 22 Oz Water Bottle" but "Android Men’s Zip Hoodie" becomes "Android Men’S Zip Hoodie" with a capital "S" following the apostrophe.
+
+![SQL-Project1-Pic18](https://github.com/DylJFern/lighthouse-labs-ds/assets/128000630/c58317c7-a44b-4f7a-862b-8531898c2a70)
+
+### <br>Numbers
+#### Formatting (Example 1)
+We can format the column 'time' of integer type as hh:mm:ss (hours:minutes:seconds) using the following query,
+```sql
+--TO_CHAR(): converts a time stamp to string according to the given format (specified as 'hh:mm:ss AM' where "AM" is used to repesent it as a 12-hour clock format)
+--TO_TIMESTAMP(): converts a number (e.g. time of interger type) or a string to a timestamp (by default, it is represented by "YYYY-MM-DD hh:mm:ss-(time_zone)" format
+select to_char(to_timestamp(time), 'hh:mm:ss AM') as time
+from all_sessions
+```
+which will convert the data type to text. For this specific analysis, 'time' and 'time_on_site' were left as an integer type (as previously mentioned) except for the 'visit_start_time' column in the 'analytics' table.
+
+#### <br>Formatting (Example 2)
+The columns that contain costs, revenue, sales, etc. can be formatted to display a certain number of significant digits. For instance 'product_price' can be divided by 1,000,000 to represent 'product_price' in millions, this data can also be either truncated or cast to a data type such as numeric that allows control of precision and scale.
+```sql
+--TRUNC(num, precision): returns a number (num) that is truncated to a specified amount of decimal places (precision)
+select trunc(product_price/1000000, 2) as product_price_millions,
+--NUMERIC(precision, scale): where the precision is the total count of significant digits in the whole number (on both sides of the decimal point) and scale is the count of decimal digits (to the right of the decimal point)
+  (product_price/1000)::numeric(10,4) as product_price_thousands
+from all_sessions
+```
+The ROUND(source, n) function can be applied to the output, where "n" determines the number of decimal places after round.
+
+#### <br>Unexpected Data
+Similar to strings, numbers can have data records with null value. For example, columns 'total_transaction_revenue', 'transactions', and 'page_views should only contain rows of real numbers.
+```sql
+update all_sessions
+set total_transaction_revenue = coalesce(total_transaction_revenue, 0)
+```
