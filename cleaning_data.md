@@ -120,7 +120,7 @@ alter table products
 rename column sku to product_sku
 ```
 #
-After performing an initial analysis and removing unwanted data, the next step taken was to format columns of every table to more appropriate data types. Before proceeding, there is a check that can be performed (for reassurance); however, in this case, since all the data is of type varchar, the compiler used by PostgreSQL will automatically throw an error if the data cannot be converted. For example, when attempting to convert a column that contains characters and numbers (such as 'a7cdz0395') to an integer type.
+After performing an initial analysis and removing unwanted data, the next step taken was to format columns of every table to more appropriate data types (based on column header). Before proceeding, there is a check that can be performed (for reassurance); however, in this case, since all the data is of type varchar, the compiler used by PostgreSQL will automatically throw an error if the data cannot be converted. For example, when attempting to convert a column that contains characters and numbers (such as 'a7cdz0395') to an integer type.
 
 <br>The following checks or variations of them are only applicable to strings (a sequence of characters) and can be used prior to converting the data, but  they will be even more useful in the next two sections when making modifications to the data.
 ```sql
@@ -245,7 +245,7 @@ from all_sessions
 
 However, it should be known that this is a temporary column result based on the query, if you were to retrieve the 'full_visitor_id' column from the 'all_sessions' table, it will display it as numeric type without the string padding.
 
-#### <br>Unexpected Data
+#### <br> Example 1: Unexpected Data
 In the database, columns can contain data that is unexpected. For instance, when viewing the 'channel_grouping' column and performing the following query
 ```sql
 select *
@@ -258,7 +258,7 @@ where channel_grouping like '%(%)%'
 
 ![SQL-Project1-Pic8](https://github.com/DylJFern/lighthouse-labs-ds/assets/128000630/4fe53478-3696-4dfe-920e-8faa6dddd256)
 
-We notice there are 5 rows displayed with '(Other)', to remove them and update the column we can use
+We notice there are 5 rows displayed with '(Other)' and know that the total number of rows in the 'all_sessions' table is 15,134. Running the previous query with NOT clause in the WHERE statement alongside previously mentioned checkes returns 15,129 (= 15,134 - 5) rows which confirms there are only 5 rows of unexpected data. To remove them and update the column we can use
 ```sql
 --UPDATE & SET: modify data in a table with new values that are specified
 update all_sessions
@@ -269,3 +269,94 @@ where channel_grouping like '%(%)%'
 Re-running the query, we get the resulting output
 
 ![SQL-Project1-Pic9](https://github.com/DylJFern/lighthouse-labs-ds/assets/128000630/eb05aa21-870e-4d0b-b34d-7c649a1e4397)
+
+#### <br> Example 2: Unexpected Data
+Similar to 'channel_grouping', we can repeat the process for the column 'country'
+```sql
+select country
+from all_sessions
+where country like '%(%)%'
+```
+which returns 31 rows containing "(not set)", "Macedonia (FYROM)", and "Myanmar (Burma)"
+
+![SQL-Project1-Pic10](https://github.com/DylJFern/lighthouse-labs-ds/assets/128000630/77845a09-736b-4696-898a-9d5cb5ce1b96)
+
+and can update the table using a CASE statement 
+```sql
+update all_sessions
+--CASE: like aa IF/ELSE statement in other programming languages; when a condition evalutes to false, the CASE expression evalutes the next condition from the top to bottom until it fines a condition that evaluates to true and returns the correspond result
+set country =
+  (case
+     when country like ('(not set)') then null
+     when country like ('Macedonia (FYROM)') then 'Macedonia'
+	   when country like ('Myanmar (Burma)') then 'Myanmar'
+     else country
+  end)
+```
+
+#### <br> Example 3: Unexpected Data
+From a quick analysis we notice names in the 'city' column begin with a uppercase character followed by a lowercase character. We can use the following to test our hypothesis (knowing the total row count is 15,134).
+```sql
+select city
+from all_sessions
+--similar to [[:alpha:]] and [[:digit:]], [[:upper:]] and [[:lower:]] search for a consecutive uppercase and lowercase character, respectively (e.g. if the uppercase character is the 3rd character in the string, the 4th character must be lowercase)
+--the ^ is known as a POSIX regular expression anchor, this character ensures that the search only happens at the start of the string 
+where regexp_like(city, '^[[:upper:]][[:lower:]]')
+```
+
+![SQL-Project1-Pic11](https://github.com/DylJFern/lighthouse-labs-ds/assets/128000630/0b56f134-c802-44ff-8143-8d9cf0b34d81)
+
+returns 6,478 rows and using the NOT clause
+```sql
+select city
+from all_sessions
+where not regexp_like(city,'^[[:upper:]][[:lower:]]')
+```
+
+![SQL-Project1-Pic12](https://github.com/DylJFern/lighthouse-labs-ds/assets/128000630/042628e8-caa8-4bb2-a498-d54ae938d062)
+
+returns 8,656 rows for a total of 15,134. And just to further confirm, we can determine the number results returned when including the previously determined data in our filter when using the WHERE clause.
+```sql
+select city
+from all_sessions
+where not (regexp_like(city, '^[[:upper:]][[:lower:]]') 
+	or city in ('not available in demo dataset', '(not set)'))
+```
+
+![SQL-Project1-Pic13](https://github.com/DylJFern/lighthouse-labs-ds/assets/128000630/11474f1a-83f7-438a-9dab-bd0b6d568f24)
+
+It returns 0 rows, and we can conclude our assessment was correct. We can update the table in a similar way used for the 'country' column.
+
+<br>The importance of the anchor (^) character can be better seen when examining the 'v2_product_category' column. We can running a basic query search to get an idea of the format of the data present
+```sql
+select v2_product_category
+from all_sessions
+```
+
+![SQL-Project1-Pic14](https://github.com/DylJFern/lighthouse-labs-ds/assets/128000630/2296a35d-c911-459a-bb6e-855aac620f4a)
+
+and apply the REGEXP_LIKE() with the resulting output in a more condensed format.
+```sql
+--GROUP BY: divides the rows returned from the SELECT statement into groups
+--COUNT(*): counts the number of rows in these newly formed groups
+select v2_product_category , count(*)
+from all_sessions
+where not regexp_like(v2_product_category, '[[:upper:]][[:lower:]]')
+group by v2_product_category
+```
+
+![SQL-Project1-Pic15](https://github.com/DylJFern/lighthouse-labs-ds/assets/128000630/d691edd7-370a-4d22-922a-baa092e33c74)
+
+It appears the only unexpected data is "(not set)"; however, if we re-run the same query with the anchor character,
+```sql
+select v2_product_category , count(*)
+from all_sessions
+where not regexp_like(v2_product_category, '^[[:upper:]][[:lower:]]')
+group by v2_product_category
+```
+
+![SQL-Project1-Pic16](https://github.com/DylJFern/lighthouse-labs-ds/assets/128000630/dd361f4f-7929-4ae5-a12e-7098fdfc6c93)
+
+the result changes and now displays another row "${escCatTitle}" that is displayed 19 times in the 'v2_product_category' column. We immediately notice, it has the format of "...Ca..." which is an uppercase character followed by a lowercase character which is why it would not appear without the use of the anchor character.
+
+#### <br>Character Case
