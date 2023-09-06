@@ -267,3 +267,59 @@ from all_sessions
 it becomes problematic when proper consideration of use is not taken into account. The string "Google 22 oz Water Bottle" becomes "Google 22 Oz Water Bottle" but "Android Men’s Zip Hoodie" becomes "Android Men’S Zip Hoodie" with a capital "S" following the apostrophe.
 
 ![SQL-Project1-Pic18](https://github.com/DylJFern/lighthouse-labs-ds/assets/128000630/c58317c7-a44b-4f7a-862b-8531898c2a70)
+
+### <br>Numbers
+#### Formatting (Part 1)
+We can format the column 'time' of integer type as hh:mm:ss (hours:minutes:seconds) using the following query,
+```sql
+--TO_CHAR(): converts a time stamp to string according to the given format (specified as 'hh:mm:ss AM' where "AM" is used to repesent it as a 12-hour clock format)
+--TO_TIMESTAMP(): converts a number (e.g. time of interger type) or a string to a timestamp (by default, it is represented by "YYYY-MM-DD hh:mm:ss-(time_zone)" format
+select to_char(to_timestamp(time), 'hh:mm:ss AM') as time
+from all_sessions
+```
+which will convert the data type to text. For this specific analysis, 'time' and 'time_on_site' were left as an integer type (as previously mentioned) except for the 'visit_start_time' column in the 'analytics' table. However, this is only a queried result, to update the actual data type you can use the method shown [here](cleaning_data.md/#Example:-Convert-to-Time).
+
+#### Formatting (Part 2)
+The columns that contain costs, revenue, sales, etc. can be formatted to display a certain number of significant digits. For instance 'product_price' can be divided by 1,000,000 to represent 'product_price' in millions, this data can also be either truncated or cast to a data type such as numeric that allows control of precision and scale.
+```sql
+--TRUNC(num, precision): returns a number (num) that is truncated to a specified amount of decimal places (precision)
+select trunc(product_price/1000000, 2) as product_price_millions,
+--NUMERIC(precision, scale): where the precision is the total count of significant digits in the whole number (on both sides of the decimal point) and scale is the count of decimal digits (to the right of the decimal point)
+  (product_price/1000)::numeric(10,4) as product_price_thousands
+from all_sessions
+```
+The ROUND(source, n) function can be applied to the output, where "n" determines the number of decimal places after round.
+
+---
+## Duplicate Data
+There are various ways to deal with duplicates, from creating FKs and PKs, to joins with filters and groups.
+
+Depending on your intentions of use for the data, for example,
+```sql
+select visit_number, visit_id, visit_start_time, date, full_visitor_id, unit_price
+from analytics
+```
+
+![SQL-Project1-Pic_new12](https://github.com/DylJFern/lighthouse-labs-ds/assets/128000630/e219f044-6656-4272-b244-3942032a52d0)
+
+you may want to remove all rows containing a duplicate of 'full_visitor_id', in this case you can apply this GROUP BY clause to put 'full_visitor_id' into groups and use an aggregate function like COUNT(\*) to count the number of instances of that column, and a HAVING clause to filter columns with COUNT(*) greater than 1. 
+
+Alternatively, you can make the argument that 'unit_price' tends to somewhat vary for the 'full_visitor_id' and removing these rows of data (e.g. 4,301,122 to less than half, after filtering and removal) would result in a loss of data. 
+```sql
+select full_visitor_id, count(*)
+from analytics
+group by full_visitor_id
+having count(*) > 1
+```
+
+![SQL-Project1-Pic_new13](https://github.com/DylJFern/lighthouse-labs-ds/assets/128000630/c92b2d1f-4c76-426d-9d7f-58e983a66c0f)
+
+In this case, when performing your analysis you can perform an INNER JOIN() for instance, across tables to reduce the output results which then can be further filtered.
+```sql
+select *
+from analytics as a
+join all_sessions as s
+	on a.full_visitor_id = s.full_visitor_id
+```
+
+![SQL-Project1-Pic_new14](https://github.com/DylJFern/lighthouse-labs-ds/assets/128000630/29f888e3-3408-4e65-a6df-cfd8b883cea1)
