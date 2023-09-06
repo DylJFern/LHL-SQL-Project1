@@ -48,11 +48,26 @@ where p.product_sku is null and sbs.total_ordered != 0
 
 ![SQL-Project1-Pic_ans8](https://github.com/DylJFern/lighthouse-labs-ds/assets/128000630/cecab3d1-9e8e-41ac-9c17-9f62c08347ff)
 
-<br>Question 4: 
+<br>Question 4: find the products and their sku marketed specifically for men.
 
 SQL Queries:
+```sql
+select distinct(v2_product_name), product_sku
+from all_sessions
+where v2_product_name like '%Men%'
+```
 
 #### Answer:
+
+![SQL-Project1-Pic_ans9](https://github.com/DylJFern/lighthouse-labs-ds/assets/128000630/009cdd37-a7e3-4959-ba21-215dcaf9eb8b)
+
+Note, if the "ILIKE" operator is used as opposed to "LIKE", it would result in the wrong query since "ILIKE" is case insensitive meaning the string "Men" can be treated as "men" which would include women's products because the wildcard (%) can represent zero, one, or many characters (in other words, characters before "m").
+```sql
+select distinct(v2_product_name), product_sku
+from all_sessions
+where v2_product_name ilike '%Men%'
+```
+![SQL-Project1-Pic_ans10](https://github.com/DylJFern/lighthouse-labs-ds/assets/128000630/657a501b-5863-4945-9018-07bb775c8ab6)
 
 <br> Question 5: 
 
