@@ -1,14 +1,15 @@
 Follow the instructions below to complete this project.
 
-## Part 1: Loading csv Files into Database
+---
+## Part 1: Loading .csv Files into Database
 
 Create a new PostgreSQL database called `ecommerce`. Set up tables for each .csv file by following [these instructions](https://www.postgresqltutorial.com/postgresql-tutorial/import-csv-file-into-posgresql-table/)
 
-> #### Note
+> #### Note:
 > We have gone over the ways that you can import a .csv file into the PostgreSQL database but [this resource](https://www.youtube.com/watch?v=6Jf7eTkIaR4) summarizes it, in case you need a refresher.
 
 
-## Part 2: Data Cleaning
+## <br>Part 2: Data Cleaning
 
 As always, once you have received any dataset, your first task is to orient yourself to the data contained within. While exploring the data, you should keep an eye out for any of potential data issues that need to be cleaned. 
 
@@ -29,11 +30,11 @@ The answer to the question
 
 ## Part 4: Starting with Data
 
-Consider the data you have available to you.  You can use the data to:
-    - find all duplicate records
-    - find the total number of unique visitors (`fullVisitorID`)
-    - find the total number of unique visitors by referring sites
-    - find each unique product viewed by each visitor
+Consider the data you have available to you.  You can use the data to:  
+    - find all duplicate records  
+    - find the total number of unique visitors (`fullVisitorID`)  
+    - find the total number of unique visitors by referring sites  
+    - find each unique product viewed by each visitor  
     - compute the percentage of visitors to the site that actually makes a purchase
     
 
