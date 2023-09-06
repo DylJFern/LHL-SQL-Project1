@@ -3,7 +3,7 @@ What issues will you address by cleaning the data?
 2) Match column names between tables.
 4) Column formatting to more appropriate structure and data types for analysis.
 5) Fix structural errors (e.g. rows in columns with instances of unrelated data or missing data), number (e.g. number of significiant digits) and string formatting (character capitalization and replacement),
-6) Filter and remote duplicate records of unique identifiers
+6) Filter and remove duplicate records of unique identifiers
 
 <br>The SQL queries needed to clean the data can be seen below.
 
@@ -205,7 +205,7 @@ set v2_product_category =
   end)
 ```
 
-#### <br>Character Case
+#### <br>Character Case: Example 1
 The characters of a string can be manipulated in unique ways, especially if one were to implement POSIX regular expressions. Nevertheless, to keep things simple we will only explore three PostgreSQL functions.
 
 All the rows in the 'type' column contain only uppercase characters.
@@ -228,35 +228,35 @@ update all_sessions
 set type = cast(lower(type) as varchar(50))
 ```
 
-<br>Simarly, we can change all the characters in a string to uppercase with UPPER().
-
-<br>Another alternative would be to use INITCAP() to convert the first letter of each word in a string expression to uppercase with the remaining characters in lowercase (a test case can be seen in [QA.md](QA.md/#Character-Case)).
+<br>Simarly, we can change all the characters in a string to uppercase with UPPER(). Another alternative would be to use INITCAP() to convert the first letter of each word in a string expression to uppercase with the remaining characters in lowercase (a test case can be seen in [QA.md](QA.md/#Character-Case)).
 
 ### <br>Numbers
-#### Formatting (Example 1)
-We can format the column 'time' of integer type as hh:mm:ss (hours:minutes:seconds) using the following query,
+#### Formatting: Example 1
+When working with large numbers, we may want to modify the displayed number of significant figures to be consistent across all related columns and their rows. For example, we can represent the 'product_price' column in millions, truncate (remove but not round) the number of digits after the decimal place, and then accordingly round the result to the "n" number of decimal places.
 ```sql
---TO_CHAR(): converts a time stamp to string according to the given format (specified as 'hh:mm:ss AM' where "AM" is used to repesent it as a 12-hour clock format)
---TO_TIMESTAMP(): converts a number (e.g. time of interger type) or a string to a timestamp (by default, it is represented by "YYYY-MM-DD hh:mm:ss-(time_zone)" format
-select to_char(to_timestamp(time), 'hh:mm:ss AM') as time
-from all_sessions
+update all_sessions
+set product_price = round(trunc(product_price/1000000, 2), 1)
 ```
-which will convert the data type to text. For this specific analysis, 'time' and 'time_on_site' were left as an integer type (as previously mentioned) except for the 'visit_start_time' column in the 'analytics' table.
 
-#### <br>Formatting (Example 2)
-The columns that contain costs, revenue, sales, etc. can be formatted to display a certain number of significant digits. For instance 'product_price' can be divided by 1,000,000 to represent 'product_price' in millions, this data can also be either truncated or cast to a data type such as numeric that allows control of precision and scale.
-```sql
---TRUNC(num, precision): returns a number (num) that is truncated to a specified amount of decimal places (precision)
-select trunc(product_price/1000000, 2) as product_price_millions,
---NUMERIC(precision, scale): where the precision is the total count of significant digits in the whole number (on both sides of the decimal point) and scale is the count of decimal digits (to the right of the decimal point)
-  (product_price/1000)::numeric(10,4) as product_price_thousands
-from all_sessions
-```
-The ROUND(source, n) function can be applied to the output, where "n" determines the number of decimal places after round.
+![SQL-Project1-Pic_new11](https://github.com/DylJFern/lighthouse-labs-ds/assets/128000630/4421671d-b6e7-4894-be5c-faf6a946d635)
 
-#### <br>Unexpected Data
-Similar to strings, numbers can have data records with null value. For example, columns 'total_transaction_revenue', 'transactions', and 'page_views should only contain rows of real numbers.
+#### <br>Unexpected Data: Example 1
+Similar to strings, numbers can have data records with null value. But for columns such as 'total_transaction_revenue', 'transactions', and 'page_views that deal with currency, they should only contain rows of real numbers.
 ```sql
 update all_sessions
 set total_transaction_revenue = coalesce(total_transaction_revenue, 0)
+```
+---
+## Duplicate Records
+When examining your data, you may notice columns of repeating data across rows. This data can be filtered and deleted based on what you are trying to achieve with that data. For instance, the 'analytics' table contains 4,301,122 rows of untouched data but there may be a situation where you want to delete the rows with more than one instance of a specific column.
+```sql
+--DELETE: delete/remove one or more rows from a table (e.g. analytics)
+delete from analytics
+--where we group instances of 'full_visitor_id' and from those groups, the rows with a COUNT(*) > 1 will get returned from the subquery and get deleted from the table.
+where full_visitor_id in ( 
+  select full_visitor_id
+  from analytics
+  group by full_visitor_id
+  having count(*) > 1
+)
 ```
