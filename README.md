@@ -83,7 +83,7 @@ where p.product_sku is null
 ```
 we realize that the 'sales_by_sku' table contains obsolete product sku's no longer used in the 'products' table. Yet, it also contains a column with non-null values for some records.
 
-![SQL-Project1-Pic23_error2](https://github.com/DylJFern/lighthouse-labs-ds/assets/128000630/0c9a836d-1a71-47d6-9020-4ff44974f4ee).
+![SQL-Project1-Pic23_error2](https://github.com/DylJFern/LHL-SQL-Project1/assets/128000630/cdfd96fe-eaa9-4db9-a7a7-271242249696)
 
 Likewise, the 'all_sessions' table shares similar problems between it and the 'products' table, as well it and the 'analytics' table. Based on this and our want to preserve the duplicate rows of data we are left with the resulting [ERD schema](schema.png).
 
@@ -91,11 +91,11 @@ Likewise, the 'all_sessions' table shares similar problems between it and the 'p
 ### Data Analysis
 Our initial ERD schema consisted of only varchar(n) of specified length n.
 
-![Initial-ERD-varchar](https://github.com/DylJFern/lighthouse-labs-ds/assets/128000630/6c02bf3d-539f-4dc9-a1b6-9925143c5ed0)
+![Initial-ERD-varchar](https://github.com/DylJFern/LHL-SQL-Project1/assets/128000630/2589d0d9-1f37-4c0c-b129-9a120923d098)
 
-Through the process of data transformation, development of methodology for checking, filtering, converting and cleaning the data, as well as interpretation of how the data could be used, we can rework the schema as follows.
+Through the process of data transformation, development of methodology for checking, filtering, converting and cleaning the data, as well as interpretation of how the data could be used, we can rework the schema as follows
 
-![schema](https://github.com/DylJFern/lighthouse-labs-ds/assets/128000630/67161884-f4e3-464d-900a-54e8c5ca2089)
+![schema](https://github.com/DylJFern/LHL-SQL-Project1/assets/128000630/783c9ba3-e470-4f97-bc8d-8d5cc34331db)
 
 ### <br>Data Insights
   - The purchases and types of purchases made based on geographical locations. From the data it could be seen that the United States was the top purchasing country, producing more than half of site visits and sales compare to all the other countries combine. The questions that can then be posed are whether the advertisements cater more towards the Western cultures, what kind and brand of apparel is more popular and how does it vary with gender, and so on.
